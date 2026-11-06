@@ -1,0 +1,16 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CineOrbit Camera Test</title>
+<style>body{font:16px system-ui;background:#101820;color:#eef4f7;padding:20px}main{max-width:620px;margin:auto}.card{background:#1b2832;border:1px solid #344652;border-radius:14px;padding:16px;margin:14px 0}.row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #344652;padding:10px 0;font-size:13px}.value{text-align:right;overflow-wrap:anywhere}button{width:100%;padding:14px;border:0;border-radius:10px;background:#65ddb2;color:#082018;font-weight:700;margin:6px 0}video{width:100%;border-radius:10px;margin-top:10px}small{color:#a7b6bf}#result{white-space:pre-wrap;font-size:13px}</style></head>
+<body><main><h2>CineOrbit — Android Camera Test</h2><p><small>Checks whether Chrome can access the camera from the ESP32-hosted address.</small></p>
+<section class="card" id="checks"></section><section class="card"><button id="test">Test camera access</button><button id="stop" style="background:#344652;color:white">Stop camera</button><div id="result">Waiting for test…</div><video id="preview" autoplay playsinline muted hidden></video></section></main>
+<script>
+const secure=window.isSecureContext, media=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+const rows=[["Page address",location.origin],["Secure context",String(secure)],["Camera API available",String(media)],["Browser",navigator.userAgent]];
+document.getElementById("checks").innerHTML=rows.map(([k,v])=>'<div class="row"><span>'+k+'</span><span class="value">'+v+'</span></div>').join("");
+let stream=null;const result=document.getElementById("result"),video=document.getElementById("preview");
+document.getElementById("test").onclick=async()=>{if(!media){result.textContent="FAIL: Camera API unavailable. This page may not be running in a supported secure context.";return}
+try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"}}});video.srcObject=stream;video.hidden=false;await video.play();let t=stream.getVideoTracks()[0],s=t.getSettings();result.textContent="SUCCESS: Camera access granted.\nCamera: "+t.label+"\nResolution: "+(s.width||"?")+" × "+(s.height||"?")}
+catch(e){result.textContent="CAMERA ERROR\nName: "+e.name+"\nMessage: "+e.message+"\n\nIf Secure context is false, HTTP on the ESP32 is blocked for camera access by this browser."}};
+document.getElementById("stop").onclick=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;video.hidden=true;result.textContent="Camera stopped."};
+window.addEventListener("pagehide",()=>{if(stream)stream.getTracks().forEach(t=>t.stop())});
+</script></body></html>
